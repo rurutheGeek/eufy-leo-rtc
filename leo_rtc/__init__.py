@@ -1,6 +1,6 @@
 """Reverse-engineered native leo_rtc client (eufy standalone battery cameras).
 
-See README.md and https://github.com/rurutheGeek/shake-cloud/issues/199.
+See README.md and https://github.com/rurutheGeek/apextox/issues/199.
 """
 
 from .client import LeoRtcClient, LeoRtcError, Message, Session
