@@ -74,10 +74,10 @@ discover → login → call を行い、RSA+AES でセッション鍵を共有�
 ## 使い方（dev-b）
 
 DID・LICENSE は機器のクラウド応答（`p2p_did`・`p2p_license`）から取得し、
-`stacks/eufy-leo-rtc/.env`（0600）へ置きます。**値は Git へ入れません。**
+リポジトリ直下の `.env`（0600）へ置きます。**値は Git へ入れません。**
 
 ```bash
-cd stacks/eufy-leo-rtc
+cd eufy-leo-rtc                      # clone したディレクトリ
 python3 -m leo_rtc discover          # サーバ一覧とログイン確認
 python3 -m leo_rtc wake --wait 45    # priv1 scall で wake、応答を表示
 ```
@@ -88,7 +88,7 @@ python3 -m leo_rtc wake --wait 45    # priv1 scall で wake、応答を表示
 ライブ映像の取得とデコード（開発用）:
 
 ```bash
-cd stacks/eufy-leo-rtc
+cd eufy-leo-rtc                      # clone したディレクトリ
 LEO_OUT=/tmp python3 tools/live_capture.py          # 映像 RTP を /tmp へ保存
 python3 tools/packets_to_annexb.py /tmp/appstream.bin -o /tmp/live.h265
 ffmpeg -i /tmp/live.h265 -fps_mode passthrough /tmp/live_%04d.png
@@ -100,13 +100,15 @@ HA と同じ LAN に居ればよいので、常駐は apps-01 の独立 Compose 
 （android-01 VM は開発・アプリ捕捉の作業台で、常駐先ではない）。
 
 ```bash
-sops exec-env platform/sops/netbox-inventory.sops.yaml '.venv/bin/ansible-playbook -i platform/ansible/inventory.netbox.yml platform/ansible/eufy-leo-rtc.yml'
+cp .env.example .env && chmod 600 .env   # EUFY_SN などを記入
+docker compose up -d --build
+python3 manage.py status                 # status|logs|restart|down
 ```
 
 - `mediamtx`（RTSP。`172.31.254.1:8554` だけに開く＝HA の docker ゲートウェイ）と
   `leo-live`（クライアント＋スーパーバイザ）の 2 コンテナ。両方 `network_mode: host`。
-- 秘密値は `platform/sops/eufy-security.sops.yaml`（EUFY_SN/DID/LICENSE/ACCOUNT/CONTACT）
-  が正本で、Ansible が `/opt/eufy-leo-rtc/.env` へ流す。
+- 秘密値（EUFY_SN/DID/LICENSE/ACCOUNT/CONTACT）は `.env` から渡す。
+  配備の自動化（Ansible・SOPS）は元の大きなリポジトリ側にあり、このリポジトリには含めない。
 - 状態（捕捉・鍵・スナップショット・sessions.csv）は
   `/srv/eufy-leo-rtc/state`。`manage.py status|logs|restart|down` で操作。
 - HA のカメラ: `rtsp://172.31.254.1:8554/eufy`（映像のみ）＋
